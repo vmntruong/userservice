@@ -51,11 +51,15 @@ public class LoggingAdvice {
 		logger.info("method invoked " + className + " : " + methodName + "() " + "arguments : "
 				+ mapper.writeValueAsString(args));
 		
+		long time = System.currentTimeMillis();
+		
 		// Get response
 		Object object = pjp.proceed();
 		
-		logger.info(className + " : " + methodName + "() " + "Response : "
-				+ mapper.writeValueAsString(object));
+		time = System.currentTimeMillis() - time;
+		
+		logger.info("{} : {}() Response : {}", className, methodName, mapper.writeValueAsString(object));
+		logger.info("{} : {}() Response time : {}", className, methodName, time);
 		return object;
 	}
 	
@@ -64,7 +68,6 @@ public class LoggingAdvice {
         String methodName = joinPoint.getSignature().getName();
         String className = joinPoint.getTarget().getClass().toString();
 
-        logger.info(className + " : " + methodName + "() " + "Exception : "
-				+ e.getMessage());
+        logger.info("{} : {}() Exception : {} ms", className, methodName, e.getMessage());
 	}
 }

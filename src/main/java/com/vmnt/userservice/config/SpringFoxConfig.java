@@ -26,6 +26,6 @@ public class SpringFoxConfig {
 				.paths(PathSelectors.any())
 				.build()
 				.useDefaultResponseMessages(false)
-				.tags(new Tag("API User", "Provides Application to Manage User"));
+				.tags(new Tag("API User", "Provides services to manage users"));
 	}
 }

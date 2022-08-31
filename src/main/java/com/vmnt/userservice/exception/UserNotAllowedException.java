@@ -1,12 +1,18 @@
-/**
- * 
- */
 package com.vmnt.userservice.exception;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
  * @author vmntruong
  *
  */
+@Data
+@EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserNotAllowedException extends RuntimeException {
 
 	/**
@@ -15,18 +21,5 @@ public class UserNotAllowedException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	
 	private String message;
-	
-	public UserNotAllowedException(String message) {
-		super();
-		this.message = message;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public void setMessage(String message) {
-		this.message = message;
-	}
 	
 }

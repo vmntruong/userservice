@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.vmnt.userservice.exception.InvalidInputException;
 import com.vmnt.userservice.exception.UserNotAllowedException;
 import com.vmnt.userservice.exception.UserNotFoundException;
 
@@ -91,4 +92,19 @@ public class UserControllerExceptionHandler extends ResponseEntityExceptionHandl
 				.status(HttpStatus.NOT_FOUND)
 				.body(error);
 	}
+	
+	/**
+	 * Handle InvalidInputException
+	 * @param ex the exception
+	 * @return a ResponseEntity instance
+	 */
+	@ExceptionHandler(value=InvalidInputException.class)
+	public ResponseEntity<Object> handleInvalidInputException(final InvalidInputException ex) {
+		ApiError error = new ApiError(HttpStatus.BAD_REQUEST,
+									  "InvalidInputException : " + ex.getMessage());
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(error);
+	}
+	
 }

@@ -8,5 +8,6 @@ public final class UserServiceConstants {
 	public static final String MSG_MANDATORY_RESIDENCE_COUNTRY = "Residence country is mandatory";
 	public static final String MSG_ONLY_FRENCH_ADULTS = "Only adult French residents are allowed to create an account";
 	public static final String MSG_VALID_PHONE_NUMBER = "Number should contain maximum 10 digits";
-
+	public static final String MSG_USER_WITH_NAME_ALREADY_EXISTED = "User with name %s has already existed";
+	public static final String MSG_USER_WITH_ID_NOT_FOUND = "User with id %d not found";
 }

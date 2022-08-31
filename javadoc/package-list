@@ -1,0 +1,10 @@
+com.vmnt.userservice
+com.vmnt.userservice.config
+com.vmnt.userservice.constants
+com.vmnt.userservice.controller
+com.vmnt.userservice.dto
+com.vmnt.userservice.exception
+com.vmnt.userservice.logging
+com.vmnt.userservice.model
+com.vmnt.userservice.repo
+com.vmnt.userservice.service

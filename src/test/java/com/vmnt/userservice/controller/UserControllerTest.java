@@ -1,10 +1,12 @@
 package com.vmnt.userservice.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
@@ -14,12 +16,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vmnt.userservice.dto.UserDto;
+import com.vmnt.userservice.exception.UserNotAllowedException;
+import com.vmnt.userservice.exception.UserNotFoundException;
 import com.vmnt.userservice.model.Gender;
 import com.vmnt.userservice.model.User;
 import com.vmnt.userservice.repo.UserRepo;
@@ -33,6 +41,9 @@ class UserControllerTest {
 	private MockMvc mockMvc;
 	
 	@Autowired
+	private ModelMapper modelMapper;
+	
+	@Autowired
 	private ObjectMapper objectMapper;
 	
 	@MockBean
@@ -41,29 +52,38 @@ class UserControllerTest {
 	@MockBean
 	private UserRepo repo;
 	
+	@TestConfiguration
+	static class TestConfig {
+		@Bean
+		public ModelMapper modelMapper() {
+			return new ModelMapper();
+		}
+	}
+	
 	@BeforeEach
 	void setUp() {
 		repo.deleteAll();
-		
 	}
 
 	@Test
-	void testRegister_whenValidInput_thenReturns200() throws Exception {
+	void testRegister_verifyCapturedUser() throws Exception {
 		// given
-		User user = new User(
+		UserDto user = new UserDto(
 				"AAAA",
-				LocalDate.of(LocalDate.now().getYear() - 20, 07, 12),
+				LocalDate.of(LocalDate.now().getYear() - 20, 7, 12),
 				"France",
 				"02343434",
 				Gender.FEMALE
 		);
 		
-		// when, then
-		mockMvc.perform(post("/api/v1/user/register")
-				.contentType("application/json")
-				.content(objectMapper.writeValueAsString(user)))
-				.andExpect(status().isOk());
+		// when
+		when(service.addNewUser(any())).thenReturn(new User());
 		
+		mockMvc.perform(post("/users")
+				.contentType("application/json")
+				.content(objectMapper.writeValueAsString(user)));
+		
+		// then
 		// verify the captured user
 		ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
 		verify(service).addNewUser(userArgumentCaptor.capture());
@@ -76,18 +96,43 @@ class UserControllerTest {
 	}
 	
 	@Test
+	void testRegister_whenValidInput_thenReturns201_andIdReturnedInLocatiton() throws Exception {
+		// given
+		final Long id = 1L;
+		UserDto userDto = new UserDto(
+				1L,
+				"AAAA",
+				LocalDate.of(LocalDate.now().getYear() - 20, 7, 12),
+				"France",
+				"02343434",
+				Gender.FEMALE
+		);
+		User user = modelMapper.map(userDto, User.class);
+		
+		// when
+		when(service.addNewUser(any())).thenReturn(user);
+		
+		// then
+		mockMvc.perform(post("/users")
+				.contentType("application/json")
+				.content(objectMapper.writeValueAsString(userDto)))
+				.andExpect(status().isCreated())
+				.andExpect(header().string("Location", "/users/" + id));
+	}
+	
+	@Test
 	void testRegister_whenInvalidInput_thenReturns400() throws Exception {
 		// given
-		final User invalidUser = new User(
+		final UserDto invalidUser = new UserDto(
 				null,
-				LocalDate.of(LocalDate.now().getYear() - 20, 07, 12),
+				LocalDate.of(LocalDate.now().getYear() - 20, 7, 12),
 				"France",
 				"02343434",
 				Gender.MALE
 		);
 		
 		// when, then
-		mockMvc.perform(post("/api/v1/user/register")
+		mockMvc.perform(post("/users")
 				.contentType("application/json")
 				.content(objectMapper.writeValueAsString(invalidUser)))
 				.andExpect(status().isBadRequest());
@@ -95,29 +140,39 @@ class UserControllerTest {
 	}
 	
 	@Test
-	void testRegister_whenNotAllowedInput_thenReturns400() throws Exception {
+	void testRegister_whenNotFrenchUser_thenReturns400() throws Exception {
 		// given
-		final User notFrenchUser = new User(
+		final UserDto notFrenchUser = new UserDto(
 				"CCCCC",
-				LocalDate.of(LocalDate.now().getYear() - 20, 07, 12),
+				LocalDate.of(LocalDate.now().getYear() - 20, 7, 12),
 				"Germany",
 				"023465654",
 				Gender.MALE
 		);
-		final User notAdultUser = new User(
+		
+		when(service.addNewUser(any())).thenThrow(UserNotAllowedException.class);
+		
+		// when, then
+		mockMvc.perform(post("/users")
+				.contentType("application/json")
+				.content(objectMapper.writeValueAsString(notFrenchUser)))
+				.andExpect(status().isBadRequest());
+	}
+	
+	@Test
+	void testRegister_whenNotAdultUser_thenReturns400() throws Exception {
+		final UserDto notAdultUser = new UserDto(
 				"DDDDDD",
-				LocalDate.of(LocalDate.now().getYear() - 17, 07, 12),
+				LocalDate.of(LocalDate.now().getYear() - 17, 7, 12),
 				"France",
 				"23242342",
 				Gender.MALE
 		);
 		
+		when(service.addNewUser(any())).thenThrow(UserNotAllowedException.class);
+		
 		// when, then
-		mockMvc.perform(post("/api/v1/user/register")
-				.contentType("application/json")
-				.content(objectMapper.writeValueAsString(notFrenchUser)))
-				.andExpect(status().isBadRequest());
-		mockMvc.perform(post("/api/v1/user/register")
+		mockMvc.perform(post("/users")
 				.contentType("application/json")
 				.content(objectMapper.writeValueAsString(notAdultUser)))
 				.andExpect(status().isBadRequest());
@@ -130,7 +185,9 @@ class UserControllerTest {
 		final long userId = 1L;
 		
 		// when, then
-		mockMvc.perform(get("/api/v1/user/{id}", userId))
+		when(service.getUserById(any())).thenThrow(UserNotFoundException.class);
+		
+		mockMvc.perform(get("/users/{id}", userId))
 				.andExpect(status().isNotFound());
 		
 	}
@@ -140,20 +197,18 @@ class UserControllerTest {
 		
 		// given
 		final User user = new User(
+				1L,
 				"EEEEE",
-				LocalDate.of(LocalDate.now().getYear() - 20, 07, 12),
+				LocalDate.of(LocalDate.now().getYear() - 20, 7, 12),
 				"France",
 				"2121313",
 				Gender.FEMALE
 		);
-		final User savedUser = user;
-		savedUser.setId(1L);
-		
-		// when
-		when(service.getUserById(savedUser.getId())).thenReturn(savedUser);
 		
 		// when, then
-		mockMvc.perform(get("/api/v1/user/{id}", savedUser.getId()))
+		when(service.getUserById(user.getId())).thenReturn(user);
+		
+		mockMvc.perform(get("/users/{id}", user.getId()))
 				.andExpect(status().isOk());
 		
 	}

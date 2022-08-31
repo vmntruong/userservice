@@ -1,11 +1,21 @@
 package com.vmnt.userservice.exception;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
 /**
  * 
  * @author vmntruong
  *
  */
+@Data
+@EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserNotFoundException extends RuntimeException {
+	
 	/**
 	 * Serial
 	 */
@@ -13,16 +23,4 @@ public class UserNotFoundException extends RuntimeException {
 	
 	private String message;
 	
-	public UserNotFoundException(String message) {
-		super();
-		this.message = message;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public void setMessage(String message) {
-		this.message = message;
-	}
 }
